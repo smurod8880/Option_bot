@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: quotex-pro-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: QUOTEX_EMAIL
+        value: your@email.com
+      - key: QUOTEX_PASSWORD
+        value: your_password
+      - key: BOT_TOKEN
+        value: your_telegram_bot_token
+      - key: CHAT_ID
+        value: your_telegram_chat_id
+    plan: free
