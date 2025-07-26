@@ -1,5 +1,3 @@
-# main.py
-[file]
 import asyncio
 import logging
 from core.quotex_core import QuotexProBot
