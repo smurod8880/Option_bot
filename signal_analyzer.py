@@ -1,15 +1,20 @@
+# core/signal_analyzer.py
+[file]
 import numpy as np
-from utils.indicators import TechnicalIndicators
+import pandas as pd
+from datetime import datetime
+from .indicators import TechnicalIndicators
+from .ai_model import AIPredictor
 
-class AdvancedSignalAnalyzer:
+class QuantumSignalAnalyzer:
     def __init__(self):
         self.indicators = TechnicalIndicators()
+        self.ai = AIPredictor()
         
     def analyze(self, asset, candles, expiry):
         if len(candles) < 50:
             return None
             
-        # Преобразование в DataFrame
         df = self._candles_to_df(candles)
         price = df['close'].iloc[-1]
         
@@ -31,10 +36,36 @@ class AdvancedSignalAnalyzer:
                 "expiry": expiry,
                 "price": price,
                 "confidence": min(confidence, 99.9),
-                "indicators": indicators
+                "indicators": indicators,
+                "timestamp": datetime.now().isoformat()
             }
         return None
 
     def _candles_to_df(self, candles):
-        # Преобразование свечей в DataFrame
-        # ...
+        return pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        
+    def _level1_momentum_impulse(self, df, indicators):
+        volume_ok = indicators.get('volume_tsunami', 0) > 2.0
+        price_change = abs(df['close'].pct_change().iloc[-1]) > 0.002
+        return {'valid': volume_ok and price_change, 'score': 0.8}
+        
+    def _level2_indicator_convergence(self, indicators):
+        macd_ok = indicators.get('macd_histogram', 0) > 0
+        vwap_ok = indicators.get('vwap_gradient', 0) > 0.002
+        rsi_ok = indicators.get('quantum_rsi', 50) < 65
+        return {'valid': macd_ok and vwap_ok and rsi_ok, 'score': 0.85}
+        
+    def _level3_ai_prediction(self, df, indicators):
+        features = [
+            df['close'].iloc[-1],
+            indicators.get('rsi', 50),
+            indicators.get('vwap_gradient', 0),
+            indicators.get('volume_tsunami', 1),
+            indicators.get('macd_histogram', 0)
+        ]
+        prediction = self.ai.predict(features)
+        return {
+            'valid': prediction > 0.85,
+            'score': prediction,
+            'direction': "UP" if prediction > 0.5 else "DOWN"
+        }
