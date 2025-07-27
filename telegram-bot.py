@@ -1,4 +1,4 @@
-import requests
+import aiohttp
 import logging
 
 logger = logging.getLogger(__name__)
@@ -7,28 +7,36 @@ class TelegramBotHandler:
     def __init__(self, token, chat_id):
         self.token = token
         self.chat_id = chat_id
-        
+        self.session = None
+
     async def initialize(self):
-        # Тест подключения
+        self.session = aiohttp.ClientSession()
         url = f"https://api.telegram.org/bot{self.token}/getMe"
-        response = requests.get(url)
-        if response.status_code == 200:
-            logger.info("✅ Telegram подключен")
-        else:
-            logger.error("❌ Ошибка подключения к Telegram")
-            
+        try:
+            async with self.session.get(url) as resp:
+                if resp.status == 200:
+                    logger.info("✅ Telegram подключен")
+                else:
+                    logger.error("❌ Ошибка подключения к Telegram")
+        except Exception as e:
+            logger.error(f"Ошибка Telegram: {e}")
+
     async def send_message(self, text):
         url = f"https://api.telegram.org/bot{self.token}/sendMessage"
-        requests.post(url, json={
-            'chat_id': self.chat_id,
-            'text': text,
-            'parse_mode': 'Markdown'
-        })
-        
+        try:
+            async with self.session.post(url, json={
+                'chat_id': self.chat_id,
+                'text': text,
+                'parse_mode': 'Markdown'
+            }) as resp:
+                if resp.status != 200:
+                    logger.error("Ошибка отправки сообщения в Telegram")
+        except Exception as e:
+            logger.error(f"Ошибка Telegram: {e}")
+
     async def send_signal(self, signal):
         emoji = "🟢" if signal['action'] == "CALL" else "🔴"
         indicators = signal['indicators']
-        
         msg = (
             f"{emoji} **QUANTUM QUOTEX SIGNAL** {emoji}\n\n"
             f"• Ассет: `{signal['asset']}`\n"
@@ -43,8 +51,7 @@ class TelegramBotHandler:
             f"- Quantum RSI: `{indicators.get('quantum_rsi', 0):.1f}`\n\n"
             f"_Сгенерировано Quantum Quotex Pro Bot_"
         )
-        
         await self.send_message(msg)
-        
+
     async def send_error(self, module, error):
         await self.send_message(f"❌ **Ошибка в {module}**\n`{error}`")
