@@ -1,19 +1,20 @@
 import sqlite3
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
 class Database:
     def __init__(self):
         self.conn = None
-        
+
     async def initialize(self):
         try:
-            self.conn = sqlite3.connect('trading_signals.db')
+            self.conn = sqlite3.connect('trading_signals.db', check_same_thread=False)
             cursor = self.conn.cursor()
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS signals (
-                    id INTEGER PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     asset TEXT,
                     action TEXT,
                     expiry INTEGER,
@@ -26,11 +27,10 @@ class Database:
             logger.info("📊 База данных инициализирована")
         except Exception as e:
             logger.error(f"Ошибка БД: {e}")
-            
+
     async def save_signal(self, signal):
         if not self.conn:
             return
-            
         try:
             cursor = self.conn.cursor()
             cursor.execute('''
